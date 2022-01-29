@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Doggy</string>
+    <string name="breeds">Breeds</string>
+    <string name="search">Search</string>
+    <string name="name_with_desc">Name:</string>
+    <string name="group_with_desc">Group:</string>
+    <string name="origin_with_desc">Origin:</string>
+    <string name="temp_with_desc">Temperament:</string>
+    <string name="error_syncing">Error trying to sync</string>
+    <string name="retry">Retry</string>
+    <string name="no_content">No cute dogs to see here :(</string>
+    <string name="start_typing">Start typing to search...</string>
+    <string name="type_message">Type something to find beautiful dogs</string>
+</resources>
