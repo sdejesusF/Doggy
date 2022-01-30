@@ -29,16 +29,12 @@ class SearchViewModelDefault @Inject constructor(
             delay(50)
             searchTerm
                 .debounce(300)
-                .filter { value ->
-                    if (value.isEmpty()) {
-                        searchResult.value = listOf()
-                        return@filter false
-                    } else {
-                        return@filter true
-                    }
-                }
                 .flatMapLatest {
-                    breedStore.searchBreeds(it)
+                    if (it.isEmpty()) {
+                        flowOf(listOf())
+                    } else {
+                        breedStore.searchBreeds(it)
+                    }
                 }
                 .collect {
                     searchResult.value = it
