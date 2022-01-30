@@ -3,6 +3,7 @@ package com.example.doggy.data
 import android.app.Application
 import com.example.doggy.AppInitializer
 import com.example.doggy.data.local.DoggyDatabase
+import com.example.doggy.data.network.ApikeyInterceptor
 import com.example.doggy.data.network.DogApi
 import com.example.doggy.data.sync.*
 import dagger.Binds
@@ -26,6 +27,7 @@ class NetworkModule {
 
     private val okHttpClientBuilder: OkHttpClient.Builder =
         OkHttpClient.Builder()
+            .addInterceptor(ApikeyInterceptor())
             .connectTimeout(1, TimeUnit.SECONDS)
 
     @Provides

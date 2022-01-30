@@ -1,7 +1,6 @@
 package com.example.doggy.data.sync
 
 import com.example.doggy.data.local.dao.BreedDao
-import com.example.doggy.data.local.entity.TempBreedEntity
 import com.example.doggy.data.network.DogApi
 import com.example.doggy.data.toTempBreedEntity
 import javax.inject.Inject
