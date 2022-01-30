@@ -22,8 +22,8 @@ fun SearchResultItem(
     ) {
         DoggyDefaultDivider()
         DoggyInfoRow(title = stringResource(id = R.string.name_with_desc), info = breed.name)
-        DoggyInfoRow(title = stringResource(id = R.string.group_with_desc), info = breed.group ?: "")
-        DoggyInfoRow(title = stringResource(id = R.string.origin_with_desc), info = breed.origin ?: "")
+        DoggyInfoRow(title = stringResource(id = R.string.group_with_desc), info = breed.group)
+        DoggyInfoRow(title = stringResource(id = R.string.origin_with_desc), info = breed.origin)
     }
 }
 

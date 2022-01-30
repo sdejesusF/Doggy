@@ -4,14 +4,13 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.GridCells
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyVerticalGrid
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Grid4x4
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.SortByAlpha
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
@@ -22,48 +21,65 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.paging.PagingData
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.items
 import com.example.doggy.R
 import com.example.doggy.data.sync.SyncStatus
 import com.example.doggy.domain.Breed
+import com.example.doggy.domain.Sort
 import com.example.doggy.ui.component.BreedItem
 import com.example.doggy.ui.component.NoContent
 import com.example.doggy.ui.theme.DoggyTheme
+import com.example.doggy.ui.util.itemsInGrid
 import com.google.accompanist.insets.LocalWindowInsets
 import com.google.accompanist.insets.rememberInsetsPaddingValues
 import com.google.accompanist.insets.ui.TopAppBar
+import kotlinx.coroutines.flow.flowOf
 
 @Composable
 @ExperimentalFoundationApi
 fun Breeds(viewModel: BreedsViewModel,
            onBreedDetail: (String) -> Unit
 ) {
-    val breeds = viewModel.breeds.collectAsState()
     val isGridView = viewModel.isGridView.collectAsState()
     val syncStatus = viewModel.syncStatus.collectAsState()
+    val breedsPagingItems = viewModel.breeds.collectAsLazyPagingItems()
+    val sorting = viewModel.sorting.collectAsState()
 
     BreedsContent(
-        breeds = breeds.value,
         isGridView = isGridView.value,
         syncStatus = syncStatus.value,
+        sorting = sorting.value,
+        breedsPagingListItems = breedsPagingItems,
+        onSortingSelected = viewModel::onSortingSelected,
         onViewTypeSelected = viewModel::onViewTypeSelected,
         onRetry = viewModel::onRetry,
-        onBreedDetail = onBreedDetail
+        onBreedDetail = onBreedDetail,
     )
 }
 
 @Composable
 @ExperimentalFoundationApi
 fun BreedsContent(
-    breeds: List<Breed>,
     isGridView: Boolean,
     syncStatus: SyncStatus,
+    sorting: Sort,
+    breedsPagingListItems: LazyPagingItems<Breed>,
+    onSortingSelected: (sorting: Sort) -> Unit,
     onRetry: () -> Unit,
     onViewTypeSelected: (isGridView: Boolean) -> Unit,
     onBreedDetail: (String) -> Unit
 ) {
     Scaffold(
         topBar = {
-            DoggyBreedsTopAppBar(isGridView = isGridView, onViewTypeSelected = onViewTypeSelected)
+            DoggyBreedsTopAppBar(
+                isGridView = isGridView,
+                onViewTypeSelected = onViewTypeSelected,
+                sorting = sorting,
+                onSortingSelected = onSortingSelected,
+            )
         }
     ) {
         Column(modifier = Modifier.padding(paddingValues = it)) {
@@ -75,10 +91,10 @@ fun BreedsContent(
                     }
                 } else {
                     BreedsList(
-                        breeds = breeds,
                         isGridView = isGridView,
                         loadingHeader = { SyncStatus(syncStatus = syncStatus, onRetry = onRetry) },
-                        onBreedDetail = onBreedDetail
+                        breedsPagingListItems = breedsPagingListItems,
+                        onBreedDetail = onBreedDetail,
                     )
                 }
             }
@@ -125,16 +141,30 @@ fun SyncStatus(
 @Composable
 private fun DoggyBreedsTopAppBar(
     isGridView: Boolean,
-    onViewTypeSelected: (isGridView: Boolean) -> Unit
+    sorting: Sort,
+    onViewTypeSelected: (isGridView: Boolean) -> Unit,
+    onSortingSelected: (sorting: Sort) -> Unit,
 ) {
-    val painter = if (isGridView)
+    val painterListMode = if (isGridView)
         rememberVectorPainter(Icons.Default.List) else
         rememberVectorPainter(Icons.Default.Grid4x4)
+    val painterSortingMode = rememberVectorPainter(Icons.Default.SortByAlpha)
     TopAppBar(
         title = { },
         actions = {
             Icon(
-                painter = painter,
+                painter = painterSortingMode,
+                contentDescription = null,
+                modifier = Modifier.clickable {
+                    onSortingSelected(when (sorting) {
+                        Sort.ASC -> Sort.DESC
+                        Sort.DESC -> Sort.ASC
+                    })
+                }
+            )
+            Spacer(modifier = Modifier.size(8.dp))
+            Icon(
+                painter = painterListMode,
                 contentDescription = null,
                 modifier = Modifier.clickable {
                     onViewTypeSelected(!isGridView)
@@ -152,25 +182,42 @@ private fun DoggyBreedsTopAppBar(
 @ExperimentalFoundationApi
 private fun BreedsList(
     modifier: Modifier = Modifier,
-    breeds: List<Breed>,
     isGridView: Boolean,
+    breedsPagingListItems: LazyPagingItems<Breed>,
     loadingHeader: @Composable () -> Unit,
     onBreedDetail: (id: String) -> Unit
-) = if (isGridView) GridView(loadingHeader = loadingHeader, modifier = modifier, breeds = breeds, onBreedDetail = onBreedDetail)
-    else ListView(loadingHeader = loadingHeader, modifier = modifier, breeds = breeds, onBreedDetail = onBreedDetail)
+) = if (isGridView)
+        GridView(
+            loadingHeader = loadingHeader,
+            modifier = modifier,
+            breedsPagingListItems = breedsPagingListItems,
+            onBreedDetail = onBreedDetail,
+        )
+    else ListView(
+            loadingHeader = loadingHeader,
+            modifier = modifier,
+            breedsPagingListItems = breedsPagingListItems,
+            onBreedDetail = onBreedDetail,
+        )
 
 @ExperimentalFoundationApi
 @Composable
 private fun GridView(
     modifier: Modifier = Modifier,
-    breeds: List<Breed>,
+    breedsPagingListItems: LazyPagingItems<Breed>,
     loadingHeader: @Composable () -> Unit,
     onBreedDetail: (id: String) -> Unit
 ) {
-    loadingHeader()
-    LazyVerticalGrid(cells = GridCells.Fixed(2)) {
-        items(breeds) { breed ->
-            BreedItem(breed = breed, onBreedDetail = onBreedDetail)
+
+    LazyColumn {
+        item {
+            loadingHeader()
+        }
+        itemsInGrid(
+            lazyPagingItems = breedsPagingListItems, columns = 2) { breed ->
+            breed?.let {
+                BreedItem(breed = it, onBreedDetail = onBreedDetail)
+            }
         }
     }
 }
@@ -179,16 +226,19 @@ private fun GridView(
 @Composable
 private fun ListView(
     modifier: Modifier = Modifier,
-    breeds: List<Breed>,
+    breedsPagingListItems: LazyPagingItems<Breed>,
     loadingHeader: @Composable () -> Unit,
     onBreedDetail: (id: String) -> Unit
 ) {
+
     LazyColumn {
         stickyHeader {
             loadingHeader()
         }
-        items(items = breeds) { breed ->
-            BreedItem(breed = breed, onBreedDetail = onBreedDetail)
+        items(breedsPagingListItems) { breed ->
+            breed?.let {
+                BreedItem(breed = breed, onBreedDetail = onBreedDetail)
+            }
         }
     }
 }
@@ -206,10 +256,12 @@ val breeds = listOf(
 private fun BreedsPreviewList() {
     DoggyTheme {
         BreedsContent(
-            breeds = breeds,
             isGridView =  false,
             syncStatus = SyncStatus.FAILED,
+            sorting = Sort.ASC,
+            onSortingSelected = {},
             onRetry = {},
+            breedsPagingListItems = flowOf(PagingData.from(breeds)).collectAsLazyPagingItems(),
             onBreedDetail = {},
             onViewTypeSelected = {}
         )
@@ -222,9 +274,11 @@ private fun BreedsPreviewList() {
 private fun BreedsPreviewGrid() {
     DoggyTheme {
         BreedsContent(
-            breeds = breeds,
             isGridView =  true,
             syncStatus = SyncStatus.RUNNING,
+            breedsPagingListItems = flowOf(PagingData.from(breeds)).collectAsLazyPagingItems(),
+            sorting = Sort.ASC,
+            onSortingSelected = {},
             onRetry = {},
             onBreedDetail = {},
             onViewTypeSelected = {}

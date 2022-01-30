@@ -1,14 +1,22 @@
 package com.example.doggy.data.local.dao
 
+import androidx.paging.PagingSource
 import androidx.room.*
 import com.example.doggy.data.local.entity.BreedEntity
 import com.example.doggy.data.local.entity.TempBreedEntity
+import com.example.doggy.domain.Sort
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 abstract class BreedDao {
     @Query("SELECT * FROM breed LIMIT :page,:limit")
     abstract fun getBreeds(page: Int, limit: Int): Flow<List<BreedEntity>>
+
+    @Query("SELECT * FROM breed ORDER BY name ASC")
+    abstract fun getBreedsPagerAsc(): PagingSource<Int, BreedEntity>
+
+    @Query("SELECT * FROM breed ORDER BY name DESC")
+    abstract fun getBreedsPagerDesc(): PagingSource<Int, BreedEntity>
 
     @Query("SELECT * FROM breed WHERE id = :id")
     abstract fun getBreed(id: String): Flow<BreedEntity>
