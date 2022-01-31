@@ -9,9 +9,7 @@ import com.example.doggy.data.sync.SyncStatus
 import com.example.doggy.domain.Breed
 import com.example.doggy.domain.Sort
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 interface BreedsViewModel {
@@ -31,19 +29,15 @@ class BreedsViewModelDefault @Inject constructor(
 ): ViewModel(), BreedsViewModel {
 
     override val isGridView: MutableStateFlow<Boolean> = MutableStateFlow(false)
-    override val syncStatus: MutableStateFlow<SyncStatus> = MutableStateFlow(SyncStatus.COMPLETED)
+    override val syncStatus: StateFlow<SyncStatus> = flow {
+        syncOrchestrator.syncStatus.collect {
+            emit(it)
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(1000L), initialValue = SyncStatus.COMPLETED)
+
     override val sorting: MutableStateFlow<Sort> = MutableStateFlow(Sort.ASC)
     override val breeds: Flow<PagingData<Breed>> = sorting.transformLatest {
         s -> emitAll(breedStore.getBreedsPage(viewModelScope, s))
-    }
-
-    init {
-        viewModelScope.launch {
-            syncOrchestrator.syncStatus.collect {
-                delay(50)
-                syncStatus.value = it
-            }
-        }
     }
 
     override fun onViewTypeSelected(isGridView: Boolean) {
