@@ -57,7 +57,7 @@ fun BreedDetailContent(
             }
             item {
                 DoggyInfoRow(title = stringResource(R.string.name_with_desc), info = breed.name, modifier = Modifier.padding(8.dp))
-                DoggyInfoRow(title = stringResource(R.string.category_with_desc), info = stringResource(R.string.unknown), modifier = Modifier.padding(8.dp))
+                DoggyInfoRow(title = stringResource(R.string.category_with_desc), info = breed.group, modifier = Modifier.padding(8.dp))
                 DoggyInfoRow(title = stringResource(R.string.origin_with_desc), info = breed.origin, modifier = Modifier.padding(8.dp))
                 DoggyInfoRow(title = stringResource(R.string.temp_with_desc), info = breed.temperament, modifier = Modifier.padding(8.dp))
             }
