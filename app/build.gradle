@@ -19,6 +19,8 @@ android {
         vectorDrawables {
             useSupportLibrary true
         }
+
+        buildConfigField "String", "THE_DOG_API_KEY", "\"" + propOrDef("THE_DOG_API_KEY", "") + "\""
     }
 
     buildTypes {
